@@ -12,18 +12,56 @@ check_password() {
     # Extract the password hash from /etc/shadow
     local userline
     userline=$(sudo awk -v u="$username" -F: '$1 == u {print $2}' /etc/shadow)
-    
+
     if [ -z "$userline" ]; then
         echo "User not found."
         return 1
     fi
 
-    # Split the hash into its components
-    IFS='$' read -r _ _ salt hash <<< "$userline"
+    # Detect the hashing algorithm based on the hash prefix
+    case "$userline" in
+        \$1\$*)
+            algo="MD5"
+            ;;
+        \$2y\$*|\$2a\$*|\$2b\$*)
+            algo="Blowfish (bcrypt)"
+            ;;
+        \$5\$*)
+            algo="SHA-256"
+            ;;
+        \$6\$*)
+            algo="SHA-512"
+            ;;
+        \$y\$*)
+            algo="yescrypt"
+            ;;
+        *)
+            echo "Error: Unsupported or unknown hash format."
+            return 1
+            ;;
+    esac
 
-    # Hash the input password using the extracted salt and compare
+    echo "Detected algorithm: $algo"
+
+    # Handle password verification based on detected algorithm
     local hashed_password
-    hashed_password=$(openssl passwd -6 -salt "$salt" "$input_password")
+    case "$algo" in
+        "yescrypt")
+            hashed_password=$(mkpasswd --method=yescrypt --salt="${userline:3:22}" "$input_password")
+            ;;
+        "MD5")
+            hashed_password=$(openssl passwd -1 -salt "${userline:3:8}" "$input_password")
+            ;;
+        "Blowfish (bcrypt)")
+            hashed_password=$(mkpasswd --method=bcrypt --salt="${userline:4:22}" "$input_password")
+            ;;
+        "SHA-256")
+            hashed_password=$(openssl passwd -5 -salt "${userline:3:16}" "$input_password")
+            ;;
+        "SHA-512")
+            hashed_password=$(openssl passwd -6 -salt "${userline:3:16}" "$input_password")
+            ;;
+    esac
 
     if [ "$hashed_password" == "$userline" ]; then
         echo "Password match."
