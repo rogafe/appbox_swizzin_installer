@@ -15,10 +15,10 @@ run_as_root() {
 
 run_as_root
 
-echo 'Please enter your Debian password (for the username appbox):'
+echo 'Please enter your Debian password (for the username abc):'
 read -r USER_PASSWORD
 
-userline=$(sudo awk -v u=appbox -F: 'u==$1 {print $2}' /etc/shadow)
+userline=$(sudo awk -v u=abc -F: 'u==$1 {print $2}' /etc/shadow)
 IFS='$'
 a=($userline)
 
@@ -36,7 +36,7 @@ Installation of Swizzin successful! Please point your browser to:
 
 This will ask for your login details which are as follows:
 
-\e[4mUsername: appbox\e[39m\e[0m
+\e[4mUsername: abc\e[39m\e[0m
 \e[4mPassword: ${USER_PASSWORD}\e[39m\e[0m
 
 If you want to install/remove apps, please type the following into your terminal:
@@ -55,7 +55,7 @@ create_service() {
     echo "3" >/etc/services.d/${NAME}/notification-fd
     cat <<EOF >/etc/services.d/${NAME}/log/run
 #!/bin/sh
-exec logutil-service /var/log/appbox/${NAME}
+exec logutil-service /var/log/abc/${NAME}
 EOF
     chmod +x /etc/services.d/${NAME}/log/run
     echo "${RUNNER}" >/etc/services.d/${NAME}/run
@@ -103,22 +103,22 @@ if [ $OLD_INSTALLS_EXIST -eq 1 ]; then
             if [ -d "/var/run/s6/services/$i" ]; then
                 rm -rf /var/run/s6/services/"$i"
             fi
-            if [ -d "/home/appbox/.config/${i^}" ]; then
-                rm -rf /home/appbox/.config/"${i^}"
+            if [ -d "/home/abc/.config/${i^}" ]; then
+                rm -rf /home/abc/.config/"${i^}"
             fi
-            if [ -d "/var/log/appbox/$i" ]; then
-                rm -rf /var/log/appbox/"$i"
+            if [ -d "/var/log/abc/$i" ]; then
+                rm -rf /var/log/abc/"$i"
             fi
         done
 
-        rm -rf /home/appbox/appbox_installer
+        rm -rf /home/abc/abc_installer
     else
         echo "Please remove the old installs and try again, or use this script to remove them."
         exit 1
     fi
 fi
 
-sed -i 's/www-data/appbox/g' /etc/nginx/nginx.conf
+sed -i 's/www-data/abc/g' /etc/nginx/nginx.conf
 echo -e "\nUpdating mono certs..."
 cert-sync --quiet /etc/ssl/certs/ca-certificates.crt
 echo -e "\nUpdating apt packages..."
@@ -228,7 +228,7 @@ mkdir -p /etc/services.d/dbus/log
 echo "3" >/etc/services.d/dbus/notification-fd
 cat <<EOF >/etc/services.d/dbus/log/run
 #!/bin/sh
-exec logutil-service /var/log/appbox/dbus
+exec logutil-service /var/log/abc/dbus
 EOF
 chmod +x /etc/services.d/dbus/log/run
 RUNNER=$(
@@ -252,6 +252,6 @@ rm -rf /etc/systemd/system/sshd.service
 systemctl enable ssh
 systemctl start ssh
 
-bash /etc/swizzin/install.sh -u appbox -p "${USER_PASSWORD}" -y -s all
+bash /etc/swizzin/install.sh -u abc -p "${USER_PASSWORD}" -y -s all
 
 url_output
