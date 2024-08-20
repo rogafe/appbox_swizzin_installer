@@ -16,7 +16,7 @@ In order to get the best performance, I recommend using Debian 11, it has minima
 
 2. Connect to your Ubuntu either through SSH or by the No VNC WebUI (and clicking the "Applications" menu, then "Terminal Emulator")
 
-3. Enter the following `sudo bash -c "bash <(curl -Ls https://raw.githubusercontent.com/coder8338/appbox_swizzin_installer/Ubuntu_20.04/swizzin_installer.sh)"`
+3. Enter the following `sudo bash -c "bash <(curl -Ls https://raw.githubusercontent.com/rogafe/appbox_swizzin_installer/Ubuntu_20.04/swizzin_installer.sh)"`
 
 ## Pre-installed apps
 The script will pre-install sonarr, radarr & panel apps.

@@ -14,10 +14,10 @@ run_as_root() {
 
 run_as_root
 
-echo 'Please enter your Debian password (for the username appbox):'
+echo 'Please enter your Debian password (for the username abc):'
 read -r USER_PASSWORD
 
-userline=$(sudo awk -v u=appbox -F: 'u==$1 {print $2}' /etc/shadow)
+userline=$(sudo awk -v u=abc -F: 'u==$1 {print $2}' /etc/shadow)
 IFS='$'
 a=($userline)
 
@@ -35,7 +35,7 @@ Installation of Swizzin sucessful! Please point your browser to:
 
 This will ask for your login details which are as follows:
 
-\e[4mUsername: appbox\e[39m\e[0m
+\e[4mUsername: abc\e[39m\e[0m
 \e[4mPassword: ${USER_PASSWORD}\e[39m\e[0m
 
 If you want to install/remove apps, please type the following into your terminal:
