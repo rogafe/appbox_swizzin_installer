@@ -5,6 +5,35 @@ export DEBIAN_FRONTEND=noninteractive
 
 OLD_INSTALLS_EXIST=0
 
+check_password() {
+    local username="$1"
+    local input_password="$2"
+
+    # Extract the password hash from /etc/shadow
+    local userline
+    userline=$(sudo awk -v u="$username" -F: '$1 == u {print $2}' /etc/shadow)
+    
+    if [ -z "$userline" ]; then
+        echo "User not found."
+        return 1
+    fi
+
+    # Split the hash into its components
+    IFS='$' read -r _ _ salt hash <<< "$userline"
+
+    # Hash the input password using the extracted salt and compare
+    local hashed_password
+    hashed_password=$(openssl passwd -6 -salt "$salt" "$input_password")
+
+    if [ "$hashed_password" == "$userline" ]; then
+        echo "Password match."
+        return 0
+    else
+        echo "Password does not match."
+        return 1
+    fi
+}
+
 run_as_root() {
     if ! whoami | grep -q 'root'; then
         echo "This script must be run with sudo, please run:"
@@ -22,7 +51,12 @@ userline=$(sudo awk -v u=abc -F: 'u==$1 {print $2}' /etc/shadow)
 IFS='$'
 a=($userline)
 
-if [[ ! "$(printf "${USER_PASSWORD}" | openssl passwd -"${a[1]}" -salt "${a[2]}" -stdin)" = "${userline}" ]]; then
+# if [[ ! "$(printf "${USER_PASSWORD}" | openssl passwd -"${a[1]}" -salt "${a[2]}" -stdin)" = "${userline}" ]]; then
+#     echo "Password does not match"
+#     exit 1
+# fi
+
+if ! check_password abc "${USER_PASSWORD}"; then
     echo "Password does not match"
     exit 1
 fi
