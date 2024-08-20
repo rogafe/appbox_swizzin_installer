@@ -9,68 +9,23 @@ check_password() {
     local username="$1"
     local input_password="$2"
 
-    # Extract the password hash from /etc/shadow
-    local userline
-    userline=$(sudo awk -v u="$username" -F: '$1 == u {print $2}' /etc/shadow)
+    # Extract the hash from /etc/shadow
+    shadow_hash=$(sudo grep "^$username:" /etc/shadow | cut -d':' -f2)
 
-    if [ -z "$userline" ]; then
-        echo "User not found."
-        return 1
-    fi
+    # Extract the method and salt from the shadow hash
+    salt=$(echo "$shadow_hash" | cut -d'$' -f3,4)
 
-    # Detect the hashing algorithm based on the hash prefix
-    case "$userline" in
-        \$1\$*)
-            algo="MD5"
-            ;;
-        \$2y\$*|\$2a\$*|\$2b\$*)
-            algo="Blowfish (bcrypt)"
-            ;;
-        \$5\$*)
-            algo="SHA-256"
-            ;;
-        \$6\$*)
-            algo="SHA-512"
-            ;;
-        \$y\$*)
-            algo="yescrypt"
-            ;;
-        *)
-            echo "Error: Unsupported or unknown hash format."
-            return 1
-            ;;
-    esac
+    # Generate the hash for the input password using the salt
+    input_hash=$(mkpasswd --method=yescrypt --salt="$salt" "$input_password")
 
-    echo "Detected algorithm: $algo"
-
-    # Handle password verification based on detected algorithm
-    local hashed_password
-    case "$algo" in
-        "yescrypt")
-            hashed_password=$(mkpasswd --method=yescrypt --salt="${userline:3:22}" "$input_password")
-            ;;
-        "MD5")
-            hashed_password=$(openssl passwd -1 -salt "${userline:3:8}" "$input_password")
-            ;;
-        "Blowfish (bcrypt)")
-            hashed_password=$(mkpasswd --method=bcrypt --salt="${userline:4:22}" "$input_password")
-            ;;
-        "SHA-256")
-            hashed_password=$(openssl passwd -5 -salt "${userline:3:16}" "$input_password")
-            ;;
-        "SHA-512")
-            hashed_password=$(openssl passwd -6 -salt "${userline:3:16}" "$input_password")
-            ;;
-    esac
-
-    if [ "$hashed_password" == "$userline" ]; then
-        echo "Password match."
-        return 0
+    # Compare the generated hash with the hash in the shadow file
+    if [ "$input_hash" == "$shadow_hash" ]; then
+        echo "Password is correct."
     else
-        echo "Password does not match."
-        return 1
+        echo "Password is incorrect."
     fi
 }
+
 
 run_as_root() {
     if ! whoami | grep -q 'root'; then
