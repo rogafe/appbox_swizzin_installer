@@ -3,6 +3,30 @@ set -x
 
 export DEBIAN_FRONTEND=noninteractive
 
+
+# Default values
+USER_PASSWORD=""
+
+# Function to parse arguments
+parse_args() {
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --password=*)
+                USER_PASSWORD="${1#*=}"
+                ;;
+            *)
+                echo "Unknown option: $1"
+                exit 1
+                ;;
+        esac
+        shift
+    done
+}
+
+# Call the argument parsing function
+parse_args "$@"
+
+
 OLD_INSTALLS_EXIST=0
 
 check_password() {
@@ -37,17 +61,20 @@ run_as_root() {
 
 run_as_root
 
-echo 'Please enter your Debian password (for the username abc):'
-read -r USER_PASSWORD
+# echo 'Please enter your Debian password (for the username abc):'
+# read -r USER_PASSWORD
+
+# If no password is provided, prompt the user
+if [ -z "$USER_PASSWORD" ]; then
+    echo 'Please enter your Debian password (for the username abc):'
+    read -r -s USER_PASSWORD
+fi
+
 
 userline=$(sudo awk -v u=abc -F: 'u==$1 {print $2}' /etc/shadow)
 IFS='$'
 a=($userline)
 
-# if [[ ! "$(printf "${USER_PASSWORD}" | openssl passwd -"${a[1]}" -salt "${a[2]}" -stdin)" = "${userline}" ]]; then
-#     echo "Password does not match"
-#     exit 1
-# fi
 
 if ! check_password abc "${USER_PASSWORD}"; then
     echo "Password does not match"
